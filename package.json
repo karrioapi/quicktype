@@ -41,6 +41,9 @@
     "isomorphic-fetch": "^2.2.1",
     "browser-or-node": "^1.2.1"
   },
+  "resolutions": {
+    "graceful-fs": "^4.2.4"
+  },
   "devDependencies": {
     "@types/urijs": "^1.19.8",
     "@types/is-url": "^1.2.28",
