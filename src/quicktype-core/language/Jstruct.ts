@@ -1,6 +1,6 @@
 import { TargetLanguage } from "../TargetLanguage";
 import { StringTypeMapping } from "../TypeBuilder";
-import { TransformedStringTypeKind, PrimitiveStringTypeKind, Type, EnumType, ClassType, UnionType } from "../Type";
+import { TransformedStringTypeKind, PrimitiveStringTypeKind, isPrimitiveTypeKind, Type, EnumType, ClassType, UnionType } from "../Type";
 import { RenderContext } from "../Renderer";
 import { Option, getOptionValues, OptionValues, BooleanOption } from "../RendererOptions";
 import { ConvenienceRenderer, ForbiddenWordsInfo } from "../ConvenienceRenderer";
@@ -51,7 +51,7 @@ const forbiddenPropertyNames = [
     "break",
     "class",
     "continue",
-    "datetime",
+    // "datetime",
     "def",
     "del",
     "dict",
@@ -304,13 +304,19 @@ export class JstructRenderer extends ConvenienceRenderer {
         return matchType<Sourcelike>(
             actualType,
             _anyType => this.withTyping("Any"),
-            _nullType => "None",
+            _nullType => struct ? [this.withTyping("Any"), " = None"] : this.withTyping("Any"),
             _boolType => "bool",
             _integerType => "int",
             _doubletype => "float",
             _stringType => "str",
-            arrayType => [this.withTyping("List"), "[", this.pythonType(arrayType.items, false), "] = ", this.withStruct("JList"), "[", this.pythonType(arrayType.items, false), "]"],
-            classType => struct ? [this.namedType(classType), " = ", this.withStruct("JStruct"), "[", this.pythonType(classType, false), "]"] : this.namedType(classType),
+            arrayType => {
+                const itemType = this.pythonType(arrayType.items, false);
+                const defaultValue = isPrimitiveTypeKind(arrayType.items.kind) ? ["[]"] : [this.withStruct("JList"), "[", itemType, "]"];
+                return [this.withTyping("List"), "[", itemType, "] = ", ...defaultValue]
+            },
+            classType => struct
+                ? [this.namedType(classType), " = ", this.withStruct("JStruct"), "[", this.pythonType(classType, false), "]"]
+                : this.namedType(classType),
             mapType => [this.withTyping("Dict"), "[str, ", this.pythonType(mapType.values, false), "] = ", this.withStruct("JDict"), "[str, ", this.pythonType(mapType.values, false), "]"],
             enumType => this.namedType(enumType),
             unionType => {
