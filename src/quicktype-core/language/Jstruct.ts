@@ -88,6 +88,7 @@ export type JstructVersion = 2 | 3;
 
 export const pythonOptions = {
     nicePropertyNames: new BooleanOption("nice-property-names", "Transform property names to be Pythonic", true),
+    typeAsSuffix: new BooleanOption("type-as-suffix", "Add Type as suffix to classes", false),
 };
 
 export class JstructTargetLanguage extends TargetLanguage {
@@ -100,7 +101,7 @@ export class JstructTargetLanguage extends TargetLanguage {
     }
 
     protected getOptions(): Option<any>[] {
-        return [pythonOptions.nicePropertyNames];
+        return [pythonOptions.nicePropertyNames, pythonOptions.typeAsSuffix];
     }
 
     get stringTypeMapping(): StringTypeMapping {
@@ -170,7 +171,7 @@ function isPartCharacter3(utf16Unit: number): boolean {
 
 const legalizeName3 = utf16LegalizeCharacters(isPartCharacter3);
 
-function classNameStyle(original: string): string {
+function classNameStyle(original: string, typeAsPrefix: boolean): string {
     const words = splitIntoWords(original);
     return combineWords(
         words,
@@ -180,8 +181,8 @@ function classNameStyle(original: string): string {
         allUpperWordStyle,
         allUpperWordStyle,
         "",
-        isStartCharacter3
-    );
+        isStartCharacter3,
+    ) + (typeAsPrefix ? "Type" : "");
 }
 
 function getWordStyle(uppercase: boolean, forceSnakeNameStyle: boolean) {
@@ -228,7 +229,7 @@ export class JstructRenderer extends ConvenienceRenderer {
     }
 
     protected makeNamedTypeNamer(): Namer {
-        return funPrefixNamer("type", s => classNameStyle(s));
+        return funPrefixNamer("type", s => classNameStyle(s, this.pyOptions.typeAsSuffix));
     }
 
     protected namerForObjectProperty(): Namer {
